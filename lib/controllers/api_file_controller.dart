@@ -51,7 +51,7 @@ class ApiFileController extends GetxController{
   }
 
   Future<List<FileData>> ReadFiles() async {
-    const url = 'https://test.wtc-system.pl/api/theme/4/download';
+    const url = 'https://test.wtc-system.com/api/themes/7/download';
     List<FileData> result = [];
     try {
       // Step 1: Download
@@ -69,6 +69,18 @@ class ApiFileController extends GetxController{
         result.add(fileData);
         // Now you can use fileBytes (Uint8List)
       });
+
+    } catch (e) {
+      print('Error: $e');
+    }
+    return result;
+  }
+  Future<Uint8List> ReadUpdate() async {
+    const url = 'https://test.wtc-system.com/api/update/';
+    Uint8List result = Uint8List(0);
+    try {
+      // Step 1: Download
+      result = await downloadFile(url);
 
     } catch (e) {
       print('Error: $e');

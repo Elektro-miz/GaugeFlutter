@@ -1,13 +1,17 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:typed_data';
 
+import 'package:byte_util/byte_word.dart';
 import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:gauge_test/controllers/api_file_controller.dart';
 import 'package:gauge_test/controllers/bluetooth_controller.dart';
+import 'package:gauge_test/controllers/modbus_crc.dart';
 import 'package:get/get.dart';
+import 'package:modbus_protocol/modbus_protocol.dart';
 
 class BtFrameData
 {
@@ -51,7 +55,9 @@ class ConfigSendController extends GetxController{
   late ApiFileController apiFileController;
   late List<FileData> readFiles;
   late FileData currentFile;
+  late Uint8List updateFile;
   late bool wasLastFilePackageReceived = false;
+  final String updateFileName = "firmware.bin";
   final List<String> fileSendingOrder = [
     "gauge_bg_0.bin",
     "gauge_bg_1.bin",
@@ -74,10 +80,12 @@ class ConfigSendController extends GetxController{
   ConfigSendStates state = ConfigSendStates.None;
   int sendFileBytes = 0;
   int currentFileId = 0;
-  int fileDataPackSize = 235;
+  int fileDataPackSize = 500;
   int dataToSendLen = 0;
   double totalDataSize = 0;
   double alreadySendDataSize = 0;
+  Completer<void>? windowCompleter;
+  late Uint8List notificationData;
   final ValueNotifier<double> sendingConfigProgress = ValueNotifier(0.0);
 
   ConfigSendController() {
@@ -113,52 +121,141 @@ class ConfigSendController extends GetxController{
   void sendFileDataCallback(bool wasDataReceived){
     wasLastFilePackageReceived = wasDataReceived;
   }
-  void sendFileData(Uint8List fileData)async {
+
+  void notificationCallback(Uint8List data)async {
+    notificationData = data;
+    if (windowCompleter != null && !windowCompleter!.isCompleted) {
+      windowCompleter!.complete();
+    }
+  }
+
+  Future<void> sendFileData(Uint8List fileData)async {
     int sendData = 0;
     int i = 0;
+    int dataWithoutResponseLen = 0;
     while(sendData < fileData.length){
 
-        dataToSendLen = fileDataPackSize;
+        int dataToSendLen = fileDataPackSize;
         if(sendData + dataToSendLen > fileData.length)
         {
           dataToSendLen = fileData.length - sendData;
         }
 
+        bool withoutResponse = (i == 0 || ((i % 80) != 0)) && dataToSendLen == fileDataPackSize;
+        // bool withoutResponse = true;
+
         final dataSize = ByteData(4);
         dataSize.setUint32(0, dataToSendLen, Endian.little);
         final dataOffset = ByteData(4);
         dataOffset.setUint32(0, sendData, Endian.little);
+        final notify = ByteData(1);
+        notify.setUint8(0, 1);
         Uint8List list = Uint8List.fromList([
           ...[ConfigSendCommandsEnum.ReceiveConfigFileData.index],
           ...dataSize.buffer.asInt8List(),
           ...dataOffset.buffer.asInt8List(),
-          ...currentFile.fileData.sublist(sendData, sendData + dataToSendLen)
+          ...notify.buffer.asInt8List(),
+          ...fileData.sublist(sendData, sendData + dataToSendLen)
         ]);
 
         sendData += dataToSendLen;
-        alreadySendDataSize += dataToSendLen;
         _calculateSendingProgress();
-        bool withoutResponse = (i % 10) != 0;
+        dataWithoutResponseLen += dataToSendLen;
         if(withoutResponse == false){
           wasLastFilePackageReceived = false;
+          notificationData = Uint8List(0);
+          windowCompleter = Completer<void>();
         }else
         {
           wasLastFilePackageReceived = true;
         }
         await bleController.sendDataToConnectedDevice(list, sendFileDataCallback, withoutResponse);
-        if(wasLastFilePackageReceived == false){
-
+        if(withoutResponse == false){
+          // await windowCompleter!.future.timeout(Duration(seconds: 5), onTimeout: () {
+          //         print("Timeout! ESP32 didn't respond.");
+          //       });
+          // if(notificationData.length != 4){
+          if(wasLastFilePackageReceived == false){
+            sendData -= dataWithoutResponseLen;
+            dataWithoutResponseLen = 0;
+          }else
+          {
+            alreadySendDataSize += dataWithoutResponseLen;
+            dataWithoutResponseLen = 0;
+          }
         }
         i++;
     }
+    return;
   }
+  Future<void> sendUpdateFileData(Uint8List fileData)async {
+    int sendData = 0;
+    int i = 0;
+    int dataWithoutResponseLen = 0;
+    while(sendData < fileData.length){
 
-  void onFrameSendSuccess(bool wasLastPackageReceived) {
+        int dataToSendLen = fileDataPackSize;
+        if(sendData + dataToSendLen > fileData.length)
+        {
+          dataToSendLen = fileData.length - sendData;
+        }
+
+        bool withoutResponse = (i == 0 || ((i % 80) != 0)) && dataToSendLen == fileDataPackSize;
+
+        final dataSize = ByteData(4);
+        dataSize.setUint32(0, dataToSendLen, Endian.little);
+        final dataOffset = ByteData(4);
+        dataOffset.setUint32(0, sendData, Endian.little);
+        final notify = ByteData(1);
+        notify.setUint8(0, 1);
+        Uint8List list = Uint8List.fromList([
+          ...[ConfigSendCommandsEnum.ReceiveUpdateData.index],
+          ...dataSize.buffer.asInt8List(),
+          ...dataOffset.buffer.asInt8List(),
+          ...notify.buffer.asInt8List(),
+          ...fileData.sublist(sendData, sendData + dataToSendLen)
+        ]);
+
+        sendData += dataToSendLen;
+        _calculateSendingProgress();
+        dataWithoutResponseLen += dataToSendLen;
+        if(withoutResponse == false){
+          wasLastFilePackageReceived = false;
+          notificationData = Uint8List(0);
+          windowCompleter = Completer<void>();
+        }else
+        {
+          wasLastFilePackageReceived = true;
+        }
+        await bleController.sendDataToConnectedDevice(list, sendFileDataCallback, withoutResponse);
+        if(withoutResponse == false){
+          if(wasLastFilePackageReceived == false){
+            sendData -= dataWithoutResponseLen;
+            dataWithoutResponseLen = 0;
+          }else
+          {
+            alreadySendDataSize += dataWithoutResponseLen;
+            dataWithoutResponseLen = 0;
+          }
+        }
+        i++;
+    }
+    return;
+  }
+  int byteWordToInt(ByteWord w){
+    // A list of bytes [High, Low]
+    Uint8List bytes = Uint8List.fromList(w.bytes);
+
+    // Create a view into the byte array
+    ByteData data = ByteData.sublistView(bytes);
+
+    return data.getUint16(0, Endian.big);
+  }
+void onFrameSendSuccessSendConfig(bool wasLastPackageReceived) async {
     switch(state) {
-      case ConfigSendStates.None: {
-      }break;
       case ConfigSendStates.StartReceiveConfig: {
         state = ConfigSendStates.StartReceiveConfigFile;
+        bleController.registerNotificationCallback(notificationCallback);
         Uint8List list = Uint8List.fromList([ConfigSendCommandsEnum.StartReceiveConfing.index]);
         bleController.sendDataToConnectedDevice(list, onFrameSendSuccess, false);
       }break;
@@ -166,55 +263,37 @@ class ConfigSendController extends GetxController{
         state = ConfigSendStates.ReceiveConfigFileData;
         sendFileBytes = 0;
         dataToSendLen = 0;
+
         String fileName = currentFile.fileName;
         List<int> encoded = utf8.encode(fileName);
+
         Uint8List nameList = Uint8List(20);
         nameList.setRange(0, encoded.length, encoded);
+
         final dataSize = ByteData(4);
         dataSize.setUint32(0, currentFile.fileData.length, Endian.little);
+
+        final dataCrc = ByteData(4);
+        final modbus = ModbusCrc();
+        int crc = modbus.getCrc(currentFile.fileData, currentFile.fileData.length);
+        dataCrc.setUint32(0, crc, Endian.little);
+
         Uint8List list = Uint8List.fromList([
           ...[ConfigSendCommandsEnum.StartReceiveConfigFile.index],
           ...nameList,
-          ...dataSize.buffer.asUint8List()
+          ...dataSize.buffer.asUint8List(),
+          ...dataCrc.buffer.asUint8List()
         ]);
         bleController.sendDataToConnectedDevice(list, onFrameSendSuccess, false);
       }break;
       case ConfigSendStates.ReceiveConfigFileData: {
-        if(sendFileBytes >= currentFile.fileData.length)
-        {
+        await sendFileData(currentFile.fileData);
+        // if(sendFileBytes >= currentFile.fileData.length)
+        // {
           state = ConfigSendStates.EndReceiveConfigFile;
           onFrameSendSuccess(true);
-          return;
-        }
-
-        if(wasLastPackageReceived == false)
-        {
-          sendFileBytes -= dataToSendLen;
-          if(sendFileBytes < 0)
-          {
-            sendFileBytes = 0;
-          }
-        }
-
-        dataToSendLen = fileDataPackSize;
-        if(sendFileBytes + dataToSendLen > currentFile.fileData.length)
-        {
-          dataToSendLen = currentFile.fileData.length - sendFileBytes;
-        }
-        final dataSize = ByteData(4);
-        dataSize.setUint32(0, dataToSendLen, Endian.little);
-        final dataOffset = ByteData(4);
-        dataOffset.setUint32(0, sendFileBytes, Endian.little);
-        Uint8List list = Uint8List.fromList([
-          ...[ConfigSendCommandsEnum.ReceiveConfigFileData.index],
-          ...dataSize.buffer.asInt8List(),
-          ...dataOffset.buffer.asInt8List(),
-          ...currentFile.fileData.sublist(sendFileBytes, sendFileBytes + dataToSendLen)
-        ]);
-        sendFileBytes += dataToSendLen;
-        alreadySendDataSize += dataToSendLen;
-        _calculateSendingProgress();
-        bleController.sendDataToConnectedDevice(list, onFrameSendSuccess);
+          // return;
+        // }
       }break;
       case ConfigSendStates.EndReceiveConfigFile: {
         if(currentFileId >= readFiles.length - 1)
@@ -238,9 +317,34 @@ class ConfigSendController extends GetxController{
       break;
     }
   }
+void onFrameSendSuccessSendUpdate(bool wasLastPackageReceived) async {
+    switch(state) {
+      case ConfigSendStates.StartReceiveUpdate: {
+        state = ConfigSendStates.ReceiveUpdateData;
+        onFrameSendSuccess(true);
+      }break;
+      case ConfigSendStates.ReceiveUpdateData: {
+        await sendUpdateFileData(updateFile);
+          state = ConfigSendStates.EndReceiveUpdate;
+          onFrameSendSuccess(true);
+      }break;
+      case ConfigSendStates.EndReceiveUpdate: {
+        state = ConfigSendStates.None;
+        Uint8List list = Uint8List.fromList([ConfigSendCommandsEnum.EndReceiveUpdate.index]);
+        bleController.sendDataToConnectedDevice(list, onFrameSendSuccess, false);
+      }break;
+      default:
+      break;
+    }
+  }
+  void onFrameSendSuccess(bool wasLastPackageReceived) async {
+    onFrameSendSuccessSendConfig(wasLastPackageReceived);
+    onFrameSendSuccessSendUpdate(wasLastPackageReceived);
+  }
 
   void _setDataParams()
   {
+    totalDataSize = 0;
     for(final file in readFiles)
     {
       totalDataSize += file.fileData.length;
@@ -256,8 +360,23 @@ class ConfigSendController extends GetxController{
         currentFile = readFiles[0];
         _setDataParams();
         state = ConfigSendStates.StartReceiveConfig;
-        Uint8List list = Uint8List.fromList([1]);
-        bleController.sendDataToConnectedDevice(list, onFrameSendSuccess);
+        Uint8List list = Uint8List.fromList([ConfigSendCommandsEnum.StartReceiveConfing.index]);
+        bleController.sendDataToConnectedDevice(list, onFrameSendSuccess, false);
+      }break;
+      default:
+      break;
+    }
+  }
+  Future sendUpdate() async {
+    switch(state) {
+      case ConfigSendStates.None: {
+        Uint8List fileData = await apiFileController.ReadUpdate();
+        updateFile = fileData;
+        totalDataSize = updateFile.length.toDouble();
+        alreadySendDataSize = 0;
+        state = ConfigSendStates.StartReceiveUpdate;
+        Uint8List list = Uint8List.fromList([ConfigSendCommandsEnum.StartReceiveUpdate.index]);
+        bleController.sendDataToConnectedDevice(list, onFrameSendSuccess, false);
       }break;
       default:
       break;

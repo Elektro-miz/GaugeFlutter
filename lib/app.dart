@@ -41,6 +41,17 @@ class MyHomePage extends StatefulWidget {
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
+
+// Helper method to keep the code clean
+Widget _buildValueTile(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4.0),
+    child: Text(
+      '$label: $value',
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+    ),
+  );
+}
 class _MyHomePageState extends State<MyHomePage> {
   late BleController bleController;
   late ConfigSendController configSendController;
@@ -70,24 +81,56 @@ class _MyHomePageState extends State<MyHomePage> {
                                 shrinkWrap: true,
                                 itemCount: snapshot.data!.length,
                                 itemBuilder: (context, index) {
-                                  final data = snapshot.data![index];
-                                  return Card(
-                                    elevation: 2,
-                                    child: ListTile(
-                                      title: Text(data.device.platformName),
-                                      subtitle: Text(data.device.remoteId.str),
-                                      trailing: Text(data.rssi.toString()),
-                                      onTap: ()=> {
-                                          if(bleController.deviceConnected)
-                                          {
-                                            configSendController.sendConfig()
-                                          }else
-                                          {
-                                            bleController.handleDevice(data.device)
-                                          }
+                                final data = snapshot.data![index];
+                                return Card(
+                                  elevation: 2,
+                                  child: ListTile(
+                                    isThreeLine: true, // Increases height to accommodate buttons
+                                    title: Text(data.device.platformName),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(data.device.remoteId.str),
+                                        const SizedBox(height: 8),
+                                        ValueListenableBuilder<bool>(
+                                        valueListenable: bleController.deviceConnected,
+                                        builder: (context, isConnected, child) {
+                                          return OverflowBar(
+                                            spacing: 8,
+                                            children: [
+                                              // PAIR BUTTON - Always enabled or changes to "Disconnect"
+                                              ElevatedButton(
+                                                onPressed: () => bleController.handleDevice(data.device),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: isConnected ? Colors.red.shade50 : null,
+                                                ),
+                                                child: Text(isConnected ? "Disconnect" : "Pair"),
+                                              ),
+
+                                              // SEND CONFIG - Enabled only if isConnected is true
+                                              ElevatedButton(
+                                                onPressed: isConnected
+                                                    ? () => configSendController.sendConfig()
+                                                    : null, // Setting to null disables the button
+                                                child: const Text("Send Config"),
+                                              ),
+
+                                              // SEND UPDATE - Enabled only if isConnected is true
+                                              ElevatedButton(
+                                                onPressed: isConnected
+                                                    ? () => configSendController.sendUpdate()
+                                                    : null,
+                                                child: const Text("Send Update"),
+                                              ),
+                                            ],
+                                          );
                                         },
+                                      ),
+                                      ],
                                     ),
-                                  );
+                                    trailing: Text("${data.rssi} dBm"),
+                                  ),
+                                );
                                 }),
                           );
                         }else{
@@ -95,10 +138,20 @@ class _MyHomePageState extends State<MyHomePage> {
                         }
                       }),
                   SizedBox(height: 10,),
-                  ValueListenableBuilder<double>(
+                  ValueListenableBuilder<ReceiveFrameData>(
                     valueListenable: bleController.readValue,
-                    builder: (_, value, __) {
-                      return Text('Read value: $value');
+                    builder: (context, data, _) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildValueTile('Software Version', data.softVer.toString()),
+                          _buildValueTile('Hardware Version', data.hardwareVer.toString()),
+                          _buildValueTile('Used Value', data.usedValue.toStringAsFixed(2)),
+                          _buildValueTile('ADC 1 Value', data.adc1Value.toStringAsFixed(2)),
+                          _buildValueTile('Battery Voltage', '${data.batteryVoltage.toStringAsFixed(2)}V'),
+                          _buildValueTile('Illumination', '${data.illuminationVoltage.toStringAsFixed(2)}V'),
+                        ],
+                      );
                     },
                   ),
                   ValueListenableBuilder<double>(
