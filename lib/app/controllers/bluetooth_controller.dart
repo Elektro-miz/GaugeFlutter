@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:gauge/app/controllers/config_send_controller.dart';
+import 'package:gauge/app/modules/device/model/device.dart';
 import 'package:get/get.dart';
 
 class ReceiveFrameData
@@ -46,13 +47,16 @@ class BleController extends GetxController{
   late ConfigSendController configSendController;
   late BluetoothDevice connectedDevice;
   final ValueNotifier<ReceiveFrameData> readValue = ValueNotifier(ReceiveFrameData());
+  bool scanComplete = false;
 
-  // FlutterBluePlus ble = FlutterBluePlus.instance;
 // This Function will help users to scan near by BLE devices and get the list of Bluetooth devices.
   Future scanDevices() async{
+        // scanComplete = false;
+        if(deviceConnected.value) disconnectTheDevice(connectedDevice);
         FlutterBluePlus.setLogLevel(LogLevel.verbose, color: true);
         await FlutterBluePlus.startScan(timeout: Duration(seconds: 5));
-        // FlutterBluePlus.stopScan();
+        await Future.delayed(const Duration(seconds: 6));
+        // scanComplete = true;
   }
 
  Future<void> pingConnectedDevice(BluetoothDevice device)async {
@@ -113,7 +117,7 @@ class BleController extends GetxController{
  Future<void> handleDevice(BluetoothDevice device)async {
   if(deviceConnected.value == false)
   {
-    await connectToDevice(device);
+    await _connectToDevice(device);
   }else{
     await disconnectTheDevice(device);
   }
@@ -133,7 +137,11 @@ class BleController extends GetxController{
     readValue.value = ReceiveFrameData.fromList(byteData);
  }
 // This function will help user to connect to BLE devices.
- Future<void> connectToDevice(BluetoothDevice device)async {
+ Future<void> connectToDevice(Device device)async {
+  _connectToDevice(device.btDevice);
+ }
+
+ Future<void> _connectToDevice(BluetoothDevice device)async {
   await device.connect(license: License.free);
   await device.requestMtu(512);
   deviceConnected.value = true;
@@ -147,6 +155,7 @@ class BleController extends GetxController{
         if(char.uuid.toString() == readDataUid) {
             await char.setNotifyValue(true);
             char.lastValueStream.listen(onValueReceived);
+            print("Device connected!");
           break;
         }
       }

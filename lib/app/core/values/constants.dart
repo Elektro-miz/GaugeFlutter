@@ -266,6 +266,19 @@ class Palette {
     800: HexColor('#9F1239'),
     900: HexColor('#881337'),
   };
+
+  static Map<int, Color> primary = {
+    50: HexColor('#FFEBEC'),
+    100: HexColor('#FFCDCB'),
+    200: HexColor('#FFAEA9'),
+    300: HexColor('#FF8E87'),
+    400: HexColor('#FF6D64'),
+    500: HexColor('#F44034'),
+    600: HexColor('#D62B20'),
+    700: HexColor('#B31D13'),
+    800: HexColor('#90120B'),
+    900: HexColor('#6E0A05'),
+};
 }
 
 class HexColor extends Color {

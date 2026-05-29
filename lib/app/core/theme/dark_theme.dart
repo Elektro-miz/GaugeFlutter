@@ -3,8 +3,11 @@ part of 'package:gauge/app/core/theme/theme.dart';
 ThemeData get darkTheme => ThemeData.dark().copyWith(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: Palette.gray[900],
+      cardColor: Palette.gray[800],
+      dividerColor: Palette.gray[700],
       appBarTheme: AppBarTheme(
         backgroundColor: Palette.gray[800],
+        elevation: 0,
       ),
       // visualDensity: ,
       // primaryColor: ,
@@ -15,8 +18,6 @@ ThemeData get darkTheme => ThemeData.dark().copyWith(
       // canvasColor:,
       // shadowColor:,
       // bottomAppBarColor:,
-      // cardColor:,
-      // dividerColor:,
       // focusColor:,
       // hoverColor:,
       // highlightColor:,
@@ -48,7 +49,6 @@ ThemeData get darkTheme => ThemeData.dark().copyWith(
       // sliderTheme:,
       // tabBarTheme:,
       // tooltipTheme:,
-      // cardTheme:,
       // chipTheme:,
       // platform:,
       // materialTapTargetSize:,
@@ -56,7 +56,16 @@ ThemeData get darkTheme => ThemeData.dark().copyWith(
       // pageTransitionsTheme:,
       // scrollbarTheme:,
       // bottomAppBarTheme:,
-      // colorScheme:,
+      colorScheme: ColorScheme.dark(
+        primary: Palette.primary[500]!,
+        primaryContainer: Palette.primary[500]!.withOpacity(0.15),
+        onPrimary: Colors.white,
+        error: Palette.red?[500] ?? Colors.red,
+        errorContainer: (Palette.red?[500] ?? Colors.red).withOpacity(0.15),
+        onError: Colors.white,
+        surfaceContainerHighest: Palette.gray[800]!,
+        onSurfaceVariant: Palette.gray[400]!,
+      ),
       // dialogTheme:,
       // floatingActionButtonTheme:,
       // navigationRailTheme:,
@@ -66,13 +75,40 @@ ThemeData get darkTheme => ThemeData.dark().copyWith(
       // bottomSheetTheme:,
       // popupMenuTheme:,
       // bannerTheme:,
-      // dividerTheme:,
+      cardTheme: CardThemeData(
+        color: Palette.gray[800],
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: Palette.gray[700]!, width: 1),
+        ),
+      ),
+      dividerTheme: DividerThemeData(
+        color: Palette.gray[700],
+        space: 24,
+        thickness: 1,
+      ),
       // buttonBarTheme:,
       // bottomNavigationBarTheme:,
       // timePickerTheme:,
       // textButtonTheme:,
-      // elevatedButtonTheme:,
-      // outlinedButtonTheme:,
+      elevatedButtonTheme: const ElevatedButtonThemeData(),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Palette.gray[200],
+          side: BorderSide(color: Palette.gray[600]!),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
       // textSelectionTheme:,
       // dataTableTheme:,
       // checkboxTheme: CheckboxThemeData(

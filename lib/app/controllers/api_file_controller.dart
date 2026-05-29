@@ -75,6 +75,7 @@ class ApiFileController extends GetxController{
     }
     return result;
   }
+
   Future<Uint8List> ReadUpdate() async {
     const url = 'https://test.wtc-system.com/api/update/';
     Uint8List result = Uint8List(0);

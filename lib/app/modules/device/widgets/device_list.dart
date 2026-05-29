@@ -1,7 +1,5 @@
-
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:gauge/app/modules/controller/device_controller.dart';
+import 'package:gauge/app/modules/device/controller/device_controller.dart';
 import 'package:gauge/app/modules/device/widgets/device_tile.dart';
 import 'package:get/get.dart';
 
@@ -13,10 +11,12 @@ class DeviceList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return deviceController.obx(
-      (state) => (ListView.builder(
-        // padding: EdgeInsets.all(20.0),
+      (state) => ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+        itemCount: state!.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          final device = state![index];
+          final device = state[index];
           return DeviceTile(
             key: ValueKey(device),
             device: device,
@@ -26,8 +26,7 @@ class DeviceList extends StatelessWidget {
             },
           );
         },
-        itemCount: state!.length,
-      )),
+      ),
       onLoading: const Center(child: CircularProgressIndicator()),
       onEmpty: const Text('No data found'),
       onError: (error) => Text(error!),

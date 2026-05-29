@@ -1,7 +1,6 @@
 // Project Imports
-import 'package:flutter/material.dart';
 import 'package:gauge/app/routes/app_pages.dart';
-import 'package:get/get.dart';
+import 'package:gauge/common.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -12,6 +11,8 @@ class MyApp extends StatelessWidget {
       title: 'Gauge',
 
       debugShowCheckedModeBanner: false,
+      darkTheme: darkTheme,
+      themeMode: ThemeMode.dark,
 
       /// Controllers disposing
       smartManagement: SmartManagement.full,

@@ -1,7 +1,8 @@
 import 'package:get/get.dart';
 
 //modules
-import 'package:gauge/app/modules/device/view/device_list_view.dart';
+import 'package:gauge/app/modules/device/view/device_index_view.dart';
+import 'package:gauge/app/modules/device/view/device_show_view.dart';
 import 'package:gauge/app/modules/unknown_view.dart';
 // import 'package:gauge/app/modules/home/view/home_page.dart';
 // import 'package:gauge/app/modules/about/view/about_view.dart';
@@ -21,19 +22,19 @@ class AppPages {
   static final routes = [
     GetPage(
       name: Routes.deviceSelect,
-      page: () => DeviceView(),
+      page: () => DeviceIndexView(),
     ),
     GetPage(
       name: Routes.device,
-      page: () => DeviceView(),
+      page: () => DeviceShowView(),
     ),
     GetPage(
       name: Routes.themes,
-      page: () => DeviceView(),
+      page: () => DeviceIndexView(),
     ),
     GetPage(
       name: Routes.myThemes,
-      page: () => DeviceView(),
+      page: () => DeviceIndexView(),
       // middlewares: [
       //   AuthMiddleware(),
       // ],
