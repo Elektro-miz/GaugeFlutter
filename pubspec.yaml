@@ -1,4 +1,4 @@
-name: gauge_test
+name: gauge
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -39,6 +39,8 @@ dependencies:
   get: ^4.7.3
   http: ^1.1.0
   archive: ^3.3.2
+  lucide_icons_flutter: ^3.1.14+2
+  get_storage: ^2.1.1
 
 dev_dependencies:
   flutter_test:
