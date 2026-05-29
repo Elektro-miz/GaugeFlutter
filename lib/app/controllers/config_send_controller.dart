@@ -7,9 +7,9 @@ import 'package:byte_util/byte_word.dart';
 import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:gauge_test/controllers/api_file_controller.dart';
-import 'package:gauge_test/controllers/bluetooth_controller.dart';
-import 'package:gauge_test/controllers/modbus_crc.dart';
+import 'package:gauge/app/controllers/api_file_controller.dart';
+import 'package:gauge/app/controllers/bluetooth_controller.dart';
+import 'package:gauge/app/controllers/modbus_crc.dart';
 import 'package:get/get.dart';
 import 'package:modbus_protocol/modbus_protocol.dart';
 

@@ -5,7 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:gauge_test/controllers/bluetooth_controller.dart';
+import 'package:gauge/app/controllers/bluetooth_controller.dart';
 import 'package:get/get.dart';
 
 import 'dart:typed_data';

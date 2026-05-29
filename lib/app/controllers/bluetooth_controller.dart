@@ -4,8 +4,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:gauge_test/controllers/config_send_controller.dart';
+import 'package:gauge/app/controllers/config_send_controller.dart';
 import 'package:get/get.dart';
+
 class ReceiveFrameData
 {
   @Uint32()
