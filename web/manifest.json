@@ -1,6 +1,6 @@
 {
-    "name": "gauge",
-    "short_name": "gauge",
+    "name": "gauge_test",
+    "short_name": "gauge_test",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

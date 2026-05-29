@@ -4,20 +4,20 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
+        
         {
-            "name": "gauge",
+            "name": "gauge_test",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "gauge (profile mode)",
+            "name": "gauge_test (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "gauge (release mode)",
+            "name": "gauge_test (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
