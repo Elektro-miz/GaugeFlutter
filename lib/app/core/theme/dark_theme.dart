@@ -42,7 +42,24 @@ ThemeData get darkTheme => ThemeData.dark().copyWith(
       // textTheme:,
       // primaryTextTheme:,
       // accentTextTheme:,
-      // inputDecorationTheme:,
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Palette.gray[800],
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: Palette.gray[700]!),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: Palette.gray[700]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: Palette.primary[500]!, width: 2),
+        ),
+        labelStyle: TextStyle(color: Palette.gray[400]),
+      ),
       // iconTheme:,
       // primaryIconTheme:,
       // accentIconTheme:,

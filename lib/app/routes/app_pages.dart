@@ -1,3 +1,9 @@
+import 'package:gauge/app/modules/auth/middleware/auth_middleware.dart';
+import 'package:gauge/app/modules/auth/view/login_view.dart';
+import 'package:gauge/app/modules/auth/view/logout_view.dart';
+import 'package:gauge/app/modules/theme/bindings.dart';
+import 'package:gauge/app/modules/theme/view/theme_personal_view.dart';
+import 'package:gauge/app/modules/theme/view/theme_public_view.dart';
 import 'package:get/get.dart';
 
 //modules
@@ -30,14 +36,27 @@ class AppPages {
     ),
     GetPage(
       name: Routes.themes,
-      page: () => DeviceIndexView(),
+      page: () => ThemePublicView(),
+      // binding: ThemeBinding(),
     ),
     GetPage(
       name: Routes.myThemes,
-      page: () => DeviceIndexView(),
-      // middlewares: [
-      //   AuthMiddleware(),
-      // ],
+      page: () => ThemePersonalView(),
+      middlewares: [
+        AuthMiddleware(),
+      ],
+      // binding: ThemeBinding(),
+    ),
+    GetPage(
+      name: Routes.auth,
+      page: () => LoginView(),
+      middlewares: [
+        AuthMiddleware(),
+      ],
+    ),
+    GetPage(
+      name: Routes.logout,
+      page: () => LogoutView()
     ),
   ];
 

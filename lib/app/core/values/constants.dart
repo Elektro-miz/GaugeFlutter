@@ -292,3 +292,5 @@ class HexColor extends Color {
 
   HexColor(final String hexColor) : super(_getColorFromHex(hexColor));
 }
+
+final BaseApiUrl = "http://test.wtc-system.com/api";

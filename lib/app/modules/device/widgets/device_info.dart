@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gauge/app/controllers/bluetooth_controller.dart';
 import 'package:gauge/app/modules/device/controller/device_controller.dart';
 import 'package:gauge/app/modules/device/model/device.dart';
+import 'package:gauge/app/modules/device/widgets/device_update_dialog.dart';
 import 'package:gauge/app/routes/app_pages.dart';
 import 'package:gauge/common.dart';
 
@@ -17,10 +18,20 @@ class DeviceInfo extends StatelessWidget {
   final BleController bleController = Get.find();
 
   bool _isVersionLow(String? versionStr) {
-    if (versionStr == null) return true;
-    final clean = versionStr.replaceAll(RegExp(r'[^\d.]'), '');
-    final major = int.tryParse(clean.split('.').first);
-    return major == null || major < 1;
+    String currentVersion = deviceController.getCurrentVersion();
+    try {
+        List<int> server = currentVersion.split('.').map(int.parse).toList();
+        List<int> device = versionStr!.split('.').map(int.parse).toList();
+
+        for (int i = 0; i < server.length; i++) {
+          if (i >= device.length) return true;
+          if (device[i] < server[i]) return true;
+        }
+          return false;
+      } catch (e) {
+        debugPrint("Błąd parsowania wersji: $e");
+        return true;
+      }
   }
 
   @override
@@ -47,19 +58,19 @@ class DeviceInfo extends StatelessWidget {
                       children: [
                         Text('URZĄDZENIE', style: theme.textTheme.labelSmall),
                         const SizedBox(height: 4),
-                        Text('Nr: ${device.id ?? "Nieznany"}', style: theme.textTheme.titleMedium),
+                        Text('ID: ${device.id ?? "Nieznany"}', style: theme.textTheme.titleMedium),
                       ],
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isLow ? theme.colorScheme.errorContainer : theme.colorScheme.primaryContainer,
+                        color: isLow ? Palette.red[900] : Palette.green[900],
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'Soft: ${device.version ?? "0.0"}',
+                        'Version: ${device.version ?? "0.0"}',
                         style: TextStyle(
-                          color: isLow ? theme.colorScheme.error : theme.colorScheme.primary,
+                          color: isLow ? Palette.red[500] : Palette.green[500],
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -71,7 +82,12 @@ class DeviceInfo extends StatelessWidget {
                   width: double.infinity,
                   height: 46,
                   child: FilledButton.icon(
-                    onPressed: () {},
+                    onPressed: () {Get.dialog(
+                        // Załóżmy, że DeviceUpdateDialog przyjmuje parametr 'device'
+                        // Jeśli nie, usuń "device: device" ze środka.
+                        DeviceUpdateDialog(),
+                        barrierDismissible: false, // Użytkownik nie zamknie dialogu klikając obok (opcjonalne)
+                      );},
                     icon: const Icon(Icons.system_update_alt_rounded),
                     label: const Text('Aktualizuj'),
                     style: FilledButton.styleFrom(
@@ -113,7 +129,7 @@ class DeviceInfo extends StatelessWidget {
                             context,
                             'Wartość',
                             '${data.usedValue.toStringAsFixed(2)}',
-                            Icons.speed,
+                            LucideIcons.gauge,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -122,7 +138,7 @@ class DeviceInfo extends StatelessWidget {
                             context,
                             'Bateria',
                             '${data.batteryVoltage.toStringAsFixed(2)} V',
-                            Icons.waves,
+                            LucideIcons.batteryFull,
                           ),
                         ),
                       ],

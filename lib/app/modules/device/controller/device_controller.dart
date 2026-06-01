@@ -1,6 +1,7 @@
 // import 'package:mdrawer/app/modules/task/data/task_data.dart';
 import 'dart:io';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:gauge/app/controllers/api_file_controller.dart';
 import 'package:gauge/app/controllers/bluetooth_controller.dart';
 import 'package:gauge/app/controllers/config_send_controller.dart';
 import 'package:gauge/app/routes/app_pages.dart';
@@ -16,6 +17,8 @@ class DeviceController extends GetxController with StateMixin<RxList<Device>> {
   GetStorage? devicesBox;
   late BleController bleController;
   late ConfigSendController configSendController;
+  late ApiFileController apiFileController;
+  late String? currentVersion;
   // var uuid = Uuid();
 
   @override
@@ -25,11 +28,12 @@ class DeviceController extends GetxController with StateMixin<RxList<Device>> {
 
     bleController = Get.find<BleController>();
     configSendController = Get.find<ConfigSendController>();
+    apiFileController = Get.find<ApiFileController>();
     try {
-      devicesBox = GetStorage("devices");
+      devicesBox = GetStorage();
       devicesBox?.write("device", null);
       // RxList<Device> devices = RxList<Device>();
-
+      currentVersion = await _getCurrentVersion();
       // change(devices, status: RxStatus.success());
       getDevices();
     } catch (error) {
@@ -67,5 +71,16 @@ class DeviceController extends GetxController with StateMixin<RxList<Device>> {
   void updateVersion(Device device)
   {
     configSendController.sendUpdate();
+  }
+
+  Future<String?> _getCurrentVersion() async
+  {
+    String? s = await apiFileController.readCurrentVersion();
+    return s;
+  }
+
+  String getCurrentVersion()
+  {
+    return currentVersion!;
   }
 }

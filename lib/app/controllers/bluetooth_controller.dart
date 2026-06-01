@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -47,16 +49,17 @@ class BleController extends GetxController{
   late ConfigSendController configSendController;
   late BluetoothDevice connectedDevice;
   final ValueNotifier<ReceiveFrameData> readValue = ValueNotifier(ReceiveFrameData());
+  final StreamController<bool> _eventController = StreamController<bool>.broadcast();
   bool scanComplete = false;
 
-// This Function will help users to scan near by BLE devices and get the list of Bluetooth devices.
+
   Future scanDevices() async{
-        // scanComplete = false;
+        FlutterBluePlus.setLogLevel(LogLevel.none);
+        await requestBluetoothEnable();
         if(deviceConnected.value) disconnectTheDevice(connectedDevice);
-        FlutterBluePlus.setLogLevel(LogLevel.verbose, color: true);
         await FlutterBluePlus.startScan(timeout: Duration(seconds: 5));
         await Future.delayed(const Duration(seconds: 6));
-        // scanComplete = true;
+
   }
 
  Future<void> pingConnectedDevice(BluetoothDevice device)async {
@@ -114,19 +117,7 @@ class BleController extends GetxController{
   }
  }
 
- Future<void> handleDevice(BluetoothDevice device)async {
-  if(deviceConnected.value == false)
-  {
-    await _connectToDevice(device);
-  }else{
-    await disconnectTheDevice(device);
-  }
-  // {
-  //   // await pingConnectedDevice(device);
-  //   configSendController = Get.find<ConfigSendController>();
-  //   configSendController.sendConfig();
-  // }
- }
+
  void onValueReceived(List<int> value){
     if (value.length < 24) return;
 
@@ -136,7 +127,7 @@ class BleController extends GetxController{
 
     readValue.value = ReceiveFrameData.fromList(byteData);
  }
-// This function will help user to connect to BLE devices.
+
  Future<void> connectToDevice(Device device)async {
   _connectToDevice(device.btDevice);
  }
@@ -149,6 +140,17 @@ class BleController extends GetxController{
   final serviceUuid = "180a";
   final readDataUid = "1906";
   List<BluetoothService> services = await device.discoverServices();
+
+  var subscription = device.connectionState.listen((BluetoothConnectionState state) async {
+      if (state == BluetoothConnectionState.disconnected) {
+          print("Device disconnected!");
+          print("Reason: ${device.disconnectReason?.code} - ${device.disconnectReason?.description}");
+
+      }
+  });
+
+  device.cancelWhenDisconnected(subscription, delayed: true, next: true);
+
   for (var service in services) {
     if(service.uuid.toString() == serviceUuid) {
       for (var char in service.characteristics) {
@@ -162,6 +164,9 @@ class BleController extends GetxController{
     }
   }
  }
+
+
+
  Future<void> disconnectTheDevice(BluetoothDevice device)async {
   await device.disconnect();
   deviceConnected.value = false;
@@ -169,5 +174,22 @@ class BleController extends GetxController{
 
 
   Stream<List<ScanResult>> get scanResults => FlutterBluePlus.scanResults;
+
+  Future<void> requestBluetoothEnable() async {
+    BluetoothAdapterState state = await FlutterBluePlus.adapterState.first;
+
+    if (state == BluetoothAdapterState.on) {
+      debugPrint("Bluetooth is already on.");
+      return;
+    }
+
+    try {
+      if (Platform.isAndroid) {
+        await FlutterBluePlus.turnOn();
+      }
+    } catch (e) {
+      debugPrint("Error turning on Bluetooth: $e");
+    }
+  }
 
 }

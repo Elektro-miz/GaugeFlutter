@@ -186,6 +186,7 @@ class ConfigSendController extends GetxController{
         }
         i++;
     }
+    _calculateSendingProgress();
     return;
   }
   Future<void> sendUpdateFileData(Uint8List fileData)async {
@@ -240,6 +241,7 @@ class ConfigSendController extends GetxController{
         }
         i++;
     }
+    _calculateSendingProgress();
     return;
   }
   int byteWordToInt(ByteWord w){
@@ -351,10 +353,10 @@ void onFrameSendSuccessSendUpdate(bool wasLastPackageReceived) async {
     }
     alreadySendDataSize = 0;
   }
-  Future sendConfig() async {
+  Future sendConfig(String themeId) async {
     switch(state) {
       case ConfigSendStates.None: {
-        final fileList = await apiFileController.ReadFiles();
+        final fileList = await apiFileController.ReadFiles(themeId);
         readFiles = _orderFilesToSend(fileList, fileSendingOrder);
         currentFileId = 0;
         currentFile = readFiles[0];

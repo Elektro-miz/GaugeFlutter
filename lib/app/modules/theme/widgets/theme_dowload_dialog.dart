@@ -1,31 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:gauge/app/controllers/config_send_controller.dart';
 import 'package:gauge/app/modules/device/controller/device_controller.dart';
+import 'package:gauge/app/modules/theme/model/gauge_theme.dart';
 import 'package:gauge/common.dart';
 
-class DeviceUpdateDialog extends StatefulWidget {
-  const DeviceUpdateDialog({super.key});
+class ThemeDownloadDialog extends StatefulWidget {
+  final GaugeTheme gaugeTheme;
+
+  const ThemeDownloadDialog({super.key, required this.gaugeTheme});
 
   @override
-  State<DeviceUpdateDialog> createState() => _DeviceUpdateDialogState();
+  State<ThemeDownloadDialog> createState() => _ThemeDownloadDialogState(gaugeTheme: gaugeTheme);
 }
 
-class _DeviceUpdateDialogState extends State<DeviceUpdateDialog> {
-  bool _isUpdating = false;
+class _ThemeDownloadDialogState extends State<ThemeDownloadDialog> {
+  bool _isUploading = false;
   final DeviceController deviceController = Get.find();
-  // Znajdujemy kontroler odpowiedzialny za progress
   final ConfigSendController configSendController = Get.find();
+  final GaugeTheme gaugeTheme;
+
+  _ThemeDownloadDialogState({required this.gaugeTheme});
 
   @override
   void initState() {
     super.initState();
-    // Nasłuchujemy zmian postępu, aby automatycznie zamknąć dialog po zakończeniu
     configSendController.sendingConfigProgress.addListener(_progressListener);
   }
 
   @override
   void dispose() {
-    // Pamiętamy o czyszczeniu listenera
     configSendController.sendingConfigProgress.removeListener(_progressListener);
     super.dispose();
   }
@@ -44,21 +48,21 @@ class _DeviceUpdateDialogState extends State<DeviceUpdateDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: theme.cardColor,
       title: Text(
-        _isUpdating ? 'Aktualizacja...' : 'Aktualizacja oprogramowania',
+        _isUploading ? 'Wgrywanie...' : 'Wgrać motyw?',
         style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!_isUpdating) ...[
+          if (!_isUploading) ...[
             Text(
-              'Aktualizacja może zająć parę minut, czy na pewno chcesz ją wykonać?',
+              'Czy na pewno chcesz wgrać motyw "${widget.gaugeTheme.name}" na urządzenie?',
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
             Text(
-              'Urządzenie musi pozostać podłączone do prądu!',
+              'Nie przerywaj połączenia z urządzeniem podczas wgrywania!',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.error,
                 fontWeight: FontWeight.bold,
@@ -66,12 +70,10 @@ class _DeviceUpdateDialogState extends State<DeviceUpdateDialog> {
             ),
           ] else ...[
             Text(
-              'Nie odłączaj urządzenia od zasilania.',
+              'Wgrywanie motywu na urządzenie...',
               style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 20),
-
-            // Reaktywna sekcja dla ValueNotifier
             ValueListenableBuilder<double>(
               valueListenable: configSendController.sendingConfigProgress,
               builder: (context, progress, child) {
@@ -104,7 +106,7 @@ class _DeviceUpdateDialogState extends State<DeviceUpdateDialog> {
           ],
         ],
       ),
-      actions: _isUpdating
+      actions: _isUploading
           ? null
           : [
               TextButton(
@@ -117,16 +119,17 @@ class _DeviceUpdateDialogState extends State<DeviceUpdateDialog> {
               FilledButton(
                 onPressed: () {
                   setState(() {
-                    _isUpdating = true;
+                    _isUploading = true;
                   });
-                  deviceController.updateVersion(deviceController.getCurrentDevice());
+                  // Tu wywołujesz swoją metodę wgrywania, np.:
+                  configSendController.sendConfig(gaugeTheme.id.toString());
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: theme.colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Aktualizuj'),
+                child: const Text('Wgraj'),
               ),
             ],
     );

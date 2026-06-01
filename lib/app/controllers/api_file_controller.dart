@@ -6,12 +6,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:gauge/app/controllers/bluetooth_controller.dart';
+import 'package:gauge/app/core/values/constants.dart';
 import 'package:get/get.dart';
 
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:archive/archive.dart';
-import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
 class FileData
@@ -50,8 +50,8 @@ class ApiFileController extends GetxController{
     return files; // Map of filename -> Uint8List
   }
 
-  Future<List<FileData>> ReadFiles() async {
-    const url = 'https://test.wtc-system.com/api/themes/7/download';
+  Future<List<FileData>> ReadFiles(String id) async {
+    var url = '$BaseApiUrl/themes/$id/download';
     List<FileData> result = [];
     try {
       // Step 1: Download
@@ -64,7 +64,7 @@ class ApiFileController extends GetxController{
       extractedFiles.forEach((filename, fileBytes) {
         // print('File: $filename, size: ${fileBytes.length}');
         FileData fileData = FileData();
-        fileData.fileName = filename;
+        fileData.fileName = filename.substring(filename.indexOf("/") + 1, filename.length);
         fileData.fileData = fileBytes;
         result.add(fileData);
         // Now you can use fileBytes (Uint8List)
@@ -77,7 +77,7 @@ class ApiFileController extends GetxController{
   }
 
   Future<Uint8List> ReadUpdate() async {
-    const url = 'https://test.wtc-system.com/api/update/';
+    var url = '$BaseApiUrl/version/download';
     Uint8List result = Uint8List(0);
     try {
       // Step 1: Download
@@ -88,4 +88,30 @@ class ApiFileController extends GetxController{
     }
     return result;
   }
+
+  Future<String?> readCurrentVersion() async {
+  var url = '$BaseApiUrl/version';
+
+  try {
+    // 1. Pobranie danych
+    final response = await http.get(Uri.parse(url));
+
+    // 2. Sprawdzenie czy status jest OK
+    if (response.statusCode == 200) {
+      // 3. Dekodowanie JSONa
+      final Map<String, dynamic> data = jsonDecode(response.body);
+
+      // 4. Pobranie wartości spod klucza "version"
+      final String version = data['version'] ?? '0.0.0';
+
+      return version;
+    } else {
+      print('Błąd serwera: ${response.statusCode}');
+      return null;
+    }
+  } catch (e) {
+    print('Błąd połączenia: $e');
+    return null;
+  }
+}
 }
