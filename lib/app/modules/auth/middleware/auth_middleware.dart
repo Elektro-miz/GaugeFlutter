@@ -12,7 +12,7 @@ class AuthMiddleware extends GetMiddleware {
 
     // 1. Jeśli użytkownik nie jest zalogowany, a trasa to NIE logowanie
     if (!isLoggedIn && route != Routes.auth) {
-      return const RouteSettings(name: Routes.auth);
+      return const RouteSettings(name: Routes.auth, arguments: {'returnRoute': AppPages.initial});
     }
 
     // 2. Jeśli użytkownik JEST zalogowany, a trasa to logowanie

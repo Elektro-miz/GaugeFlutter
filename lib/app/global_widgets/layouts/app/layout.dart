@@ -1,5 +1,8 @@
 
 import 'package:flutter/material.dart';
+import 'package:gauge/app/modules/auth/controller/auth_controller.dart';
+import 'package:gauge/app/routes/app_pages.dart';
+import 'package:gauge/common.dart';
 
 class AppLayout extends StatelessWidget {
   final String? title;
@@ -20,4 +23,22 @@ class AppLayout extends StatelessWidget {
     return appbar ?? AppBar(title: Text(title!));
   }
 
+  static List<Widget> getAppBarActions()
+  {
+    final AuthController authController = Get.find();
+    List<Widget> actions = [];
+    if(authController.isLoggedIn())
+    {
+      actions.add(IconButton(
+        icon:Icon(LucideIcons.logOut),
+        onPressed: () =>  Get.toNamed(Routes.logout),
+      ));
+    } else {
+       actions.add(IconButton(
+        icon:Icon(LucideIcons.logIn),
+        onPressed: () =>  Get.toNamed(Routes.auth),
+      ));
+    }
+    return actions;
+  }
 }

@@ -25,8 +25,13 @@ class AuthController extends GetxController {
   // Logowanie
   Future<void> logout() async {
     try {
+      final token = box.read("token");
       final response = await _connect.post(
-        '$BaseApiUrl/logout', {}
+        '$BaseApiUrl/logout',
+        {},
+        headers: {
+          'Authorization': 'Bearer $token'
+        },
       );
 
       if (response.statusCode == 200) {
@@ -83,7 +88,8 @@ class AuthController extends GetxController {
           box.write('user', User.fromJson(body['user']));
         }
 
-        // Przejście do aplikacji
+        emailController.clear();
+        passwordController.clear();
         Get.offNamed(Routes.themes);
       } else {
         // Obsługa błędów API (np. błędne hasło)

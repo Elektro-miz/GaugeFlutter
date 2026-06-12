@@ -42,7 +42,7 @@ packages:
     source: hosted
     version: "2.1.2"
   byte_util:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: byte_util
       sha256: "766790158b7352c3bc3cd2d1ad4f1f8d3b2952c243efd11ab44fd1c8fd9f17f2"
@@ -304,14 +304,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.17.0"
-  modbus_protocol:
-    dependency: "direct main"
-    description:
-      name: modbus_protocol
-      sha256: b10c0d04eb5f7db47820c5f305acd2f875d3ca426cc1869a2f9093fc5e9a733c
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.1"
   package_config:
     dependency: transitive
     description:

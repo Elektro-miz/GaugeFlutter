@@ -1,4 +1,5 @@
 
+import 'package:gauge/app/controllers/bluetooth_controller.dart';
 import 'package:gauge/app/modules/auth/controller/auth_controller.dart';
 import 'package:gauge/app/modules/device/controller/device_controller.dart';
 import 'package:gauge/app/modules/device/model/device.dart';
@@ -13,6 +14,8 @@ class DeviceShowView extends StatelessWidget {
   late Device currentDevice;
   final DeviceController deviceController = Get.find();
   final AuthController authController = Get.find();
+  final BleController bleController = Get.find();
+
   @override
   Widget build(BuildContext context) {
     currentDevice = deviceController.getCurrentDevice();
@@ -22,12 +25,7 @@ class DeviceShowView extends StatelessWidget {
       content: DeviceInfo(device: currentDevice),
       appbar: AppBar(
         title: Text(title!),
-        actions: [
-          IconButton(
-            icon: !authController.isLoggedIn() ? Icon(LucideIcons.logIn) : Icon(LucideIcons.logOut),
-            onPressed: () => !authController.isLoggedIn() ? Get.offNamed(Routes.auth) : Get.offNamed(Routes.logout),
-          ),
-        ],
+        actions: AppLayout.getAppBarActions(),
       ),
     );
   }

@@ -143,9 +143,7 @@ class BleController extends GetxController{
 
   var subscription = device.connectionState.listen((BluetoothConnectionState state) async {
       if (state == BluetoothConnectionState.disconnected) {
-          print("Device disconnected!");
-          print("Reason: ${device.disconnectReason?.code} - ${device.disconnectReason?.description}");
-
+        disconnectTheDevice(connectedDevice);
       }
   });
 

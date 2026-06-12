@@ -19,7 +19,6 @@ class DeviceController extends GetxController with StateMixin<RxList<Device>> {
   late ConfigSendController configSendController;
   late ApiFileController apiFileController;
   late String? currentVersion;
-  // var uuid = Uuid();
 
   @override
   void onInit() async {
@@ -27,6 +26,7 @@ class DeviceController extends GetxController with StateMixin<RxList<Device>> {
 
 
     bleController = Get.find<BleController>();
+    bleController.deviceConnected.addListener(_onDeviceDisconnected);
     configSendController = Get.find<ConfigSendController>();
     apiFileController = Get.find<ApiFileController>();
     try {
@@ -57,10 +57,21 @@ class DeviceController extends GetxController with StateMixin<RxList<Device>> {
   void openDevice(Device device) {
     bleController.connectToDevice(device);
     devicesBox?.write('device', device);
-    // Get.lazyPut<TaskController>(() => TaskController());
-    // final TaskController taskController = Get.find();
-    // taskController.openProject(project);
     Get.toNamed(Routes.device);
+  }
+
+  void _onDeviceDisconnected()
+  {
+    if(!bleController.deviceConnected.value)
+    {
+      devicesBox?.write("device", null);
+      Get.offAllNamed(Get.currentRoute);
+    }
+  }
+
+  bool isDeviceConnected()
+  {
+    return (devicesBox?.hasData("device"))!;
   }
 
   Device getCurrentDevice()

@@ -5,6 +5,7 @@ import 'package:gauge/app/modules/device/model/device.dart';
 import 'package:gauge/app/modules/device/widgets/device_update_dialog.dart';
 import 'package:gauge/app/routes/app_pages.dart';
 import 'package:gauge/common.dart';
+import 'package:gauge/app/global_widgets/layouts/app/responsive_layout.dart';
 
 class DeviceInfo extends StatelessWidget {
   final Device device;
@@ -20,47 +21,86 @@ class DeviceInfo extends StatelessWidget {
   bool _isVersionLow(String? versionStr) {
     String currentVersion = deviceController.getCurrentVersion();
     try {
-        List<int> server = currentVersion.split('.').map(int.parse).toList();
-        List<int> device = versionStr!.split('.').map(int.parse).toList();
+      List<int> server = currentVersion.split('.').map(int.parse).toList();
+      List<int> device = versionStr!.split('.').map(int.parse).toList();
 
-        for (int i = 0; i < server.length; i++) {
-          if (i >= device.length) return true;
-          if (device[i] < server[i]) return true;
-        }
-          return false;
-      } catch (e) {
-        debugPrint("Błąd parsowania wersji: $e");
-        return true;
+      for (int i = 0; i < server.length; i++) {
+        if (i >= device.length) return true;
+        if (device[i] < server[i]) return true;
       }
+      return false;
+    } catch (e) {
+      debugPrint("Błąd parsowania wersji: $e");
+      return true;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isLow = _isVersionLow(device.version);
     final theme = Theme.of(context);
+    final isWide = context.isDesktop || context.isDeviceLandscape;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
+    Widget content = isWide
+      ? IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: _buildMainInfoCard(context, theme, isLow)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildLiveDataCard(context, theme)),
+            ],
+          ),
+        )
+      : Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildMainInfoCard(context, theme, isLow),
+            const SizedBox(height: 16),
+            _buildLiveDataCard(context, theme),
+          ],
+        );
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(context.isDesktop ? 24.0 : 16.0),
+      child: context.isDesktop
+          ? Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1024),
+                child: content,
+              ),
+            )
+          : content,
+    );
+  }
+
+  Widget _buildMainInfoCard(BuildContext context, ThemeData theme, bool isLow) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('URZĄDZENIE', style: theme.textTheme.labelSmall),
-                        const SizedBox(height: 4),
-                        Text('ID: ${device.id ?? "Nieznany"}', style: theme.textTheme.titleMedium),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('URZĄDZENIE', style: theme.textTheme.labelSmall),
+                          const SizedBox(height: 4),
+                          Text('ID: ${device.id ?? "Nieznany"}', style: theme.textTheme.titleMedium, overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
@@ -77,17 +117,21 @@ class DeviceInfo extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Column(
+              children: [
                 SizedBox(
                   width: double.infinity,
                   height: 46,
                   child: FilledButton.icon(
-                    onPressed: () {Get.dialog(
-                        // Załóżmy, że DeviceUpdateDialog przyjmuje parametr 'device'
-                        // Jeśli nie, usuń "device: device" ze środka.
+                    onPressed: () {
+                      Get.dialog(
                         DeviceUpdateDialog(),
-                        barrierDismissible: false, // Użytkownik nie zamknie dialogu klikając obok (opcjonalne)
-                      );},
+                        barrierDismissible: false,
+                      );
+                    },
                     icon: const Icon(Icons.system_update_alt_rounded),
                     label: const Text('Aktualizuj'),
                     style: FilledButton.styleFrom(
@@ -108,48 +152,51 @@ class DeviceInfo extends StatelessWidget {
                 ),
               ],
             ),
-          ),
+          ],
         ),
-        const SizedBox(height: 16),
-        ValueListenableBuilder(
-          valueListenable: bleController.readValue,
-          builder: (context, data, child) {
-            return Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+    );
+  }
+
+  Widget _buildLiveDataCard(BuildContext context, ThemeData theme) {
+    return ValueListenableBuilder(
+      valueListenable: bleController.readValue,
+      builder: (context, data, child) {
+        return Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('DANE POBIERANE NA ŻYWO', style: theme.textTheme.labelSmall),
+                const SizedBox(height: 12),
+                Row(
                   children: [
-                    Text('DANE POBIERANE NA ŻYWO', style: theme.textTheme.labelSmall),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildLiveMetric(
-                            context,
-                            'Wartość',
-                            '${data.usedValue.toStringAsFixed(2)}',
-                            LucideIcons.gauge,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildLiveMetric(
-                            context,
-                            'Bateria',
-                            '${data.batteryVoltage.toStringAsFixed(2)} V',
-                            LucideIcons.batteryFull,
-                          ),
-                        ),
-                      ],
+                    Expanded(
+                      child: _buildLiveMetric(
+                        context,
+                        'Wartość',
+                        data.usedValue.toStringAsFixed(2),
+                        LucideIcons.gauge,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildLiveMetric(
+                        context,
+                        'Bateria',
+                        '${data.batteryVoltage.toStringAsFixed(2)} V',
+                        LucideIcons.batteryFull,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            );
-          },
-        ),
-      ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -166,12 +213,14 @@ class DeviceInfo extends StatelessWidget {
         children: [
           Icon(icon, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: theme.textTheme.bodySmall),
-              Text(value, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: theme.textTheme.bodySmall, overflow: TextOverflow.ellipsis),
+                Text(value, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+              ],
+            ),
           ),
         ],
       ),

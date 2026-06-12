@@ -64,6 +64,10 @@ class ThemeController extends GetxController {
   }
 
   void showPersonalThemes() {
+    if(!authController.isLoggedIn())
+    {
+      return;
+    }
     if (!isPersonalTab) {
       isPersonalTab = true;
       fetchThemes(refresh: true);
